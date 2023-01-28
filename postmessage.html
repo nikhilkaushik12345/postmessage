@@ -7,7 +7,7 @@
         <script type="text/javascript">
         window.addEventListener("load", () => {
             document.getElementById("startBtn").addEventListener("click", () => {
-                var x = window.open('https://epicgames.com/id/authorize?client_id=xyza7891aaoJHOSQ1y2hGW378ogqtftm&redirect_uri=https%3A%2F%2Fsketchfab.com%2Fsocial%2Fcomplete%2Fepic%2F%3Fredirect_state%3DFqLcz0FpqiQ7GlyQOGNbdAONHFUVs3ah&state=FqLcz0FpqiQ7GlyQOGNbdAONHFUVs3ah&response_type=code&scope=basic_profile+email', 'mywindow');
+                var x = window.open('https://auth.riotgames.com/authorize?redirect_uri=https://developer.riotgames.com/oauth2-callback&client_id=riot-developer-portal&response_type=code&scope=openid+email+summoner&ui_locales=en&prompt=signup', 'mywindow');
                 window.onmessage = (e) => {
                     document.getElementById("token-plate").innerText = JSON.stringify(e.data);
                 }
