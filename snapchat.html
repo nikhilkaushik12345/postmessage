@@ -1,50 +1,52 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Snapchat Login Kit</title>
-  </head>
+/********************** HTML EXAMPLE **********************/
+<html lang="en">
   <body>
-    <h1>Snapchat Login Kit</h1>
-    <button onclick="login()">Login with Snapchat</button>
+    <div id="display_name"></div>
+    <img id="bitmoji" />
+    <div id="external_id"></div>
+    <hr />
+    <div id="my-login-button-target"></div>
     <script>
-      function login() {
-        const clientId = "719a2544-e565-45b1-adf3-f58f9b5e3e2f";
-        const redirectUri = "https://nikhilkaushik12345.github.io/postmessage/snapchat.html";
-        const scope = "https://auth.snapchat.com/oauth2/api/user.display_name";
-        const authorizationUrl = `https://accounts.snapchat.com/accounts/oauth2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=token`;
-
-        window.location.href = authorizationUrl;
-      }
-
-      // This function is called when the user is redirected back to the callback URL
-      async function handleCallback() {
-        const searchParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = searchParams.get("access_token");
-
-        // Fetch the user's display name using the Snapchat API
-        const displayNameUrl = "https://kit.snapchat.com/v1/me";
-        const displayNameQuery = {
-          query: "{ me { displayName } }"
-        };
-        const displayNameResponse = await fetch(displayNameUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}`
+      window.snapKitInit = function () {
+        var loginButtonIconId = "my-login-button-target";
+        // Mount Login Button
+        snap.loginkit.mountButton(loginButtonIconId, {
+          clientId: "7ce8703a-ffd9-4fb7-a411-36b873b824f3",
+          redirectURI: "https://nikhilkaushik12345.github.io/postmessage/snapchat.html",
+          scopeList: [
+            "user.display_name",
+            "user.bitmoji.avatar",
+            "user.external_id",
+          ],
+          handleResponseCallback: function () {
+            snap.loginkit.fetchUserInfo().then(
+              function (result) {
+                console.log("User info:", result.data.me);
+                document.getElementById("display_name").innerHTML =
+                  result.data.me.displayName;
+                document.getElementById("bitmoji").src =
+                  result.data.me.bitmoji.avatar;
+                document.getElementById("external_id").src =
+                  result.data.me.externalId;
+              },
+              function (err) {
+                console.log(err); // Error
+              }
+            );
           },
-          body: JSON.stringify(displayNameQuery)
         });
-        const userData = await displayNameResponse.json();
-        const displayName = userData.me.displayName;
+      };
 
-        // Do something with the user's display name
-        console.log(`User's display name: ${displayName}`);
-      }
-
-      // Call the handleCallback function if the URL contains an access token
-      if (window.location.hash.includes("access_token")) {
-        handleCallback();
-      }
+      // Load the SDK asynchronously
+      (function (d, s, id) {
+        var js,
+          sjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = "https://sdk.snapkit.com/js/v1/login.js";
+        sjs.parentNode.insertBefore(js, sjs);
+      })(document, "script", "loginkit-sdk");
     </script>
   </body>
 </html>
