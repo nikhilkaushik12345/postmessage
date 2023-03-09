@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Snapchat Login Kit</title>
+  </head>
+  <body>
+    <h1>Snapchat Login Kit</h1>
+    <button onclick="login()">Login with Snapchat</button>
+    <script>
+      function login() {
+        const clientId = "719a2544-e565-45b1-adf3-f58f9b5e3e2f";
+        const redirectUri = "https://nikhilkaushik12345.github.io/postmessage/snapchat.html";
+        const scope = "https://auth.snapchat.com/oauth2/api/user.display_name";
+        const authorizationUrl = `https://accounts.snapchat.com/accounts/oauth2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=token`;
+
+        window.location.href = authorizationUrl;
+      }
+
+      // This function is called when the user is redirected back to the callback URL
+      async function handleCallback() {
+        const searchParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = searchParams.get("access_token");
+
+        // Fetch the user's display name using the Snapchat API
+        const displayNameUrl = "https://kit.snapchat.com/v1/me";
+        const displayNameQuery = {
+          query: "{ me { displayName } }"
+        };
+        const displayNameResponse = await fetch(displayNameUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`
+          },
+          body: JSON.stringify(displayNameQuery)
+        });
+        const userData = await displayNameResponse.json();
+        const displayName = userData.me.displayName;
+
+        // Do something with the user's display name
+        console.log(`User's display name: ${displayName}`);
+      }
+
+      // Call the handleCallback function if the URL contains an access token
+      if (window.location.hash.includes("access_token")) {
+        handleCallback();
+      }
+    </script>
+  </body>
+</html>
