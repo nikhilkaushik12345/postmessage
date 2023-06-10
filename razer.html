@@ -49,39 +49,32 @@
         // Remove the token so it's not visible in the URL after we're done
         window.location.hash = '';
 
-        function handleAccessToken() {
-  const accessToken = localStorage.getItem('accessToken');
-  if (accessToken) {
-    fetch('https://oauth2.razer.com/userinfo', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    })
-      .then((response) => {
-        if (response.ok) {
+        fetch('https://oauth2.razer.com/userinfo', {
+          headers: {
+            'Authorization': `Bearer ${response.access_token}`
+          }
+        })
+        .then((response) => {
           response.json().then((json) => {
+            localStorage.setItem('accessToken', response.access_token);
             const email = json.email;
             showOutput(`Your email: ${email}`);
           });
-        } else {
-          throw new Error('Failed to fetch email');
-        }
-      })
-      .catch((error) => {
-        showOutput(`Error fetching email: ${error}`);
-      });
-  }
-}
+        })
+        .catch((error) => {
+          showOutput(`Error fetching email: ${error}`);
+        });
+      }
 
-function showOutput(message) {
-  const output = document.getElementById('output');
-  output.innerText = message;
-}
+      function showOutput(message) {
+        const output = document.getElementById('output');
+        output.innerText = message;
+      }
 
-// Check if the page was loaded after a successful login
-if (window.location.hash) {
-  handleAccessToken();
-}
+      // Check if the page was loaded after a successful login
+      if (window.location.hash) {
+        handleAccessToken();
+      }
 
     </script>
   </body>
