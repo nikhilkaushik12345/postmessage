@@ -50,20 +50,21 @@
         window.location.hash = '';
 
         fetch('https://oauth2.razer.com/userinfo', {
-          headers: {
-            'Authorization': `Bearer ${response.access_token}`
-          }
-        })
-        .then((response) => {
-          response.json().then((json) => {
-            localStorage.setItem('accessToken', response.access_token);
-            const email = json.sub;
-            showOutput(`Your email: ${email}`);
-          });
-        })
-        .catch((error) => {
-          showOutput(`Error fetching email: ${error}`);
-        });
+  headers: {
+    'Authorization': `Bearer ${response.access_token}`
+  }
+})
+.then((response) => {
+  response.json().then((json) => {
+    localStorage.setItem('accessToken', response.access_token);
+    const email = json.email;
+    showOutput(`Your email: ${email}`);
+  });
+})
+.catch((error) => {
+  showOutput(`Error fetching email: ${error}`);
+});
+
       }
 
       function showOutput(message) {
