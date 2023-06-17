@@ -39,33 +39,31 @@
       }
 
       function handleAccessToken() {
-        const hash = window.location.hash;
-        const response = hash.replace(/^#/, '').split('&').reduce((result, pair) => {
-          const keyValue = pair.split('=');
-          result[keyValue[0]] = keyValue[1];
-          return result;
-        }, {});
+  const hash = window.location.hash;
+  const response = hash.replace(/^#/, '').split('&').reduce((result, pair) => {
+    const keyValue = pair.split('=');
+    result[keyValue[0]] = keyValue[1];
+    return result;
+  }, {});
 
-        // Remove the token so it's not visible in the URL after we're done
-        window.location.hash = '';
+  // Remove the token so it's not visible in the URL after we're done
+  window.location.hash = '';
 
-        fetch('https://oauth2.razer.com/userinfo', {
-  headers: {
-    'Authorization': `Bearer ${response.access_token}`
-  }
-})
-.then((response) => {
-  response.json().then((json) => {
-    localStorage.setItem('accessToken', response.access_token);
-    const email = json.email;
-    showOutput(`Your email: ${email}`);
+  fetch('https://oauth2.razer.com/userinfo', {
+    headers: {
+      'Authorization': `Bearer ${response.access_token}`
+    }
+  })
+  .then((response) => {
+    response.json().then((json) => {
+      const email = json.email;
+      showOutput(`Your email: ${email}`);
+    });
+  })
+  .catch((error) => {
+    showOutput(`Error fetching email: ${error}`);
   });
-})
-.catch((error) => {
-  showOutput(`Error fetching email: ${error}`);
-});
-
-      }
+}
 
       function showOutput(message) {
         const output = document.getElementById('output');
