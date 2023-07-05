@@ -2,12 +2,12 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Sketchfab Identity Example</title>
+    <title>Deezer Identity Example</title>
   </head>
   <body>
-    <h1>Sketchfab Identity Example</h1>
+    <h1>Deezer Identity Example</h1>
     <p>
-      Click the button below to log in with Sketchfab Identity and fetch your email address.
+      Click the button below to log in with Deezer Identity and fetch your email address.
     </p>
     <button onclick="handleLogin()">Log In</button>
     <button onclick="handleLogout()">Log Out</button>
@@ -18,7 +18,7 @@
       const redirectURI = window.location.href;
 
       function handleLogin() {
-        const authorizeURL = `https://connect.deezer.com/oauth/auth.php?app_id=618144&redirect_uri=https%3A%2F%2Fnikhilkaushikop.github.io%2Fpostmessage%2Fdeezer&perms=basic_access%2Cemail&response_type=token&dispatch_path=auth`;
+        const authorizeURL = `https://connect.deezer.com/oauth/auth.php?app_id=618144&redirect_uri=https%3A%2F%2Fnikhilkaushik12345.github.io%2Fpostmessage%2Fdeezer&perms=basic_access%2Cemail&response_type=token&dispatch_path=auth`;
         window.location.href = authorizeURL;
       }
 
