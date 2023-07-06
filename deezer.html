@@ -52,7 +52,8 @@
         fetch('https://api.deezer.com/user/me', {
           headers: {
             'Authorization': `Bearer ${response.access_token}`
-          }
+          },
+          mode: 'cors' // Add the 'mode' option with 'cors' value
         })
         .then((response) => {
           response.json().then((json) => {
