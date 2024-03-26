@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Reddit Identity Example</title>
+</head>
+<body>
+  <h1>Reddit Identity Example</h1>
+  <p>
+    Click the button below to log in with Reddit Identity and fetch your email address.
+  </p>
+  <button onclick="handleLogin()">Log In</button>
+  <button onclick="handleLogout()">Log Out</button>
+  <div id="output"></div>
+
+  <script>
+    const clientID = '43bb84c0b3ffa5fe75d8329acd748fd518959f3c'; // Your Reddit Identity client ID
+    const redirectURI = window.location.href;
+    const corsAnywhereProxy = 'https://cors-anywhere.herokuapp.com/';
+
+    function handleLogin() {
+      const authorizeURL = `https://oauth2.razer.com/authorize_openid?response_type=token&scope=openid+profile+email&client_id=${clientID}&redirect_uri=${redirectURI}&state=1`;
+      window.location.href = authorizeURL;
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('accessToken');
+      showOutput('Logged out successfully.');
+    }
+
+    function handleAccessToken() {
+      const hash = window.location.hash;
+      const response = hash.replace(/^#/, '').split('&').reduce((result, pair) => {
+        const keyValue = pair.split('=');
+        result[keyValue[0]] = keyValue[1];
+        return result;
+      }, {});
+
+      // Remove the token so it's not visible in the URL after we're done
+      window.location.hash = '';
+
+      const accessToken = response.access_token;
+      const idToken = response.id_token;
+
+      fetch(`${corsAnywhereProxy}https://oauth2.razer.com/userinfo`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      })
+      .then((response) => {
+        if (response.status === 200) {
+          response.json().then((json) => {
+            localStorage.setItem('accessToken', accessToken);
+
+            if (json.email) {
+              const email = json.email;
+              showOutput(`Your email: ${email}`);
+            } else {
+              showOutput('Email not found in the response.');
+            }
+          });
+        } else {
+          showOutput(`Error fetching email: ${response.status} - ${response.statusText}`);
+        }
+      })
+      .catch((error) => {
+        showOutput(`Error fetching email: ${error}`);
+      });
+    }
+
+    function showOutput(message) {
+      const output = document.getElementById('output');
+      output.innerText = message;
+    }
+
+    // Check if the page was loaded after a successful login
+    if (window.location.hash) {
+      handleAccessToken();
+    }
+  </script>
+</body>
+</html>
