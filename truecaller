@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truecaller Authentication Example</title>
+    <script>
+        function initiateTruecallerAuthentication() {
+            // Construct the Truecaller SDK integration URL
+            var integrationURL = "truecallersdk://truesdk/web_verify?type=btmsheet" +
+                "&requestNonce=123456789" + // Replace with a unique request ID
+                "&partnerKey=r7IEZe6541d7a29054afe9d6a1a3d04023636" +             // Replace with your Truecaller partner key
+                "&partnerName=Nikhil Kaushik" +                 // Replace with your app name
+                "&lang=en" +                             // Language locale (e.g., en for English)
+                "&privacyUrl=https://example.com/privacy" +  // Link to your privacy policy
+                "&termsUrl=https://example.com/terms" +      // Link to your terms of service
+                "&loginPrefix=Verify with" +             // Prefix for login button text
+                "&loginSuffix=to continue" +             // Suffix for login button text
+                "&ctaPrefix=Continue with" +             // Prefix for continue button text
+                "&ctaColor=#000000" +                    // Button fill color (black in this example)
+                "&ctaTextColor=#FFFFFF" +                // Button text color (white in this example)
+                "&btnShape=rect" +                       // Button shape (rectangular in this example)
+                "&skipOption=Skip";       
+
+            // Redirect to the Truecaller SDK integration URL
+            window.location = integrationURL;
+
+            // Timeout to check if the user returned to the page or Truecaller app is present
+            setTimeout(function() {
+                if (document.hasFocus()) {
+                    // Handle case where Truecaller app is not present on the device
+                    console.log("User returned or Truecaller app not present");
+                    // Redirect or handle as needed
+                } else {
+                    // Handle case where Truecaller app is present and overlay opened
+                    console.log("Truecaller app present, waiting for verification");
+                    // You'll receive the user's access token on your callback URL
+                    // Handle the response on your server side
+                }
+            }, 600);  
+        }
+    </script>
+</head>
+<body>
+    <h1>Truecaller Authentication Example</h1>
+    <p>Click the button below to initiate Truecaller authentication:</p>
+    <button onclick="initiateTruecallerAuthentication()">Authenticate with Truecaller</button>
+</body>
+</html>
