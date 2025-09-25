@@ -33,24 +33,20 @@
           },
         });
 
+        // Log the entire token response, even if it's an error
         const tokenData = await tokenResponse.json();
 
-        // Ensure the full response is shown in the output
-        if (tokenData) {
-          document.getElementById('response-output').textContent = JSON.stringify({
-            tokenData, // Show full token response
-          }, null, 2);
+        // Display the full response (error or success)
+        document.getElementById('response-output').textContent = JSON.stringify(tokenData, null, 2);
 
-          // After displaying token response, start the next Ecobee authorization process
+        // If the token request is successful, proceed with the second authorization flow
+        if (tokenData.access_token) {
           initiateSecondAuthFlow(tokenData.access_token);
-        } else {
-          document.getElementById('response-output').textContent = JSON.stringify({
-            error: 'Failed to get access token from Ecobee.',
-          }, null, 2);
         }
 
       } catch (error) {
-        console.error('Error fetching token:', error);
+        // In case of any fetch error, display the error details
+        console.error('Error during token request:', error);
         document.getElementById('response-output').textContent = JSON.stringify({ error: error.message }, null, 2);
       }
     }
