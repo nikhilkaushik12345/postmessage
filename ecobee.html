@@ -32,12 +32,13 @@
             'Content-Type': 'application/x-www-form-urlencoded',
           },
         });
-        
+
         const tokenData = await tokenResponse.json();
 
-        if (tokenData.access_token) {
+        // Ensure the full response is shown in the output
+        if (tokenData) {
           document.getElementById('response-output').textContent = JSON.stringify({
-            tokenData,
+            tokenData, // Show full token response
           }, null, 2);
 
           // After displaying token response, start the next Ecobee authorization process
