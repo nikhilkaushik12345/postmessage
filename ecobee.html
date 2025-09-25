@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ecobee Sign-In</title>
+</head>
+<body>
+  <h1>Login with Ecobee</h1>
+  <button id="ecobee-signin-button">Sign in with Ecobee</button>
+  <pre id="response-output"></pre>
+
+  <script>
+    document.getElementById('ecobee-signin-button').onclick = function () {
+      const ecobeeAuthUrl =
+        'https://api.ecobee.com/authorize?response_type=code&client_id=bmX64qqTAuyTRc8Z8E3jflcCii1mIrka&redirect_uri=https://nikhilkaushik12345.github.io/postmessage/ecobee&scope=&state=1';
+      window.location.href = ecobeeAuthUrl;
+    };
+
+    function extractCodeFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('code');
+    }
+
+    async function getEcobeeToken(authCode) {
+      const tokenUrl = `https://api.ecobee.com/token?grant_type=authorization_code&code=${authCode}&redirect_uri=https://nikhilkaushik12345.github.io/postmessage/ecobee&client_id=bmX64qqTAuyTRc8Z8E3jflcCii1mIrka&ecobee_type=jwt`;
+
+      try {
+        const tokenResponse = await fetch(tokenUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        });
+        
+        const tokenData = await tokenResponse.json();
+
+        if (tokenData.access_token) {
+          document.getElementById('response-output').textContent = JSON.stringify({
+            tokenData,
+          }, null, 2);
+
+          // After displaying token response, start the next Ecobee authorization process
+          initiateSecondAuthFlow(tokenData.access_token);
+        } else {
+          document.getElementById('response-output').textContent = JSON.stringify({
+            error: 'Failed to get access token from Ecobee.',
+          }, null, 2);
+        }
+
+      } catch (error) {
+        console.error('Error fetching token:', error);
+        document.getElementById('response-output').textContent = JSON.stringify({ error: error.message }, null, 2);
+      }
+    }
+
+    async function initiateSecondAuthFlow(initialAccessToken) {
+      // Start the second authorization flow with EMS scope
+      const secondEcobeeAuthUrl =
+        'https://api.ecobee.com/authorize?response_type=code&client_id=bmX64qqTAuyTRc8Z8E3jflcCii1mIrka&redirect_uri=https://nikhilkaushik12345.github.io/postmessage/ecobee&scope=ems&state=1';
+
+      // Redirect user for second authorization step
+      window.location.href = secondEcobeeAuthUrl;
+    }
+
+    window.onload = async function () {
+      const authCode = extractCodeFromUrl();
+
+      if (authCode) {
+        try {
+          // Step 1: Get the access token using the code
+          await getEcobeeToken(authCode);
+        } catch (error) {
+          document.getElementById('response-output').textContent = JSON.stringify({ error: error.message }, null, 2);
+        }
+      } else {
+        document.getElementById('response-output').textContent = 'No code found in URL.';
+      }
+    };
+  </script>
+</body>
+</html>
