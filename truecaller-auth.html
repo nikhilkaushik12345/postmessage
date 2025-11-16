@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nikhil Kaushik - Truecaller Authentication</title>
+    <script src="https://web-sdk.truecaller.com/v2/truecallerjs.js"></script>  <!-- Truecaller Mobile Web SDK -->
+</head>
+<body>
+    <h2>Sign Up / Login with Truecaller - Nikhil Kaushik App</h2>
+    <p>App Name: Nikhil Kaushik</p>
+    <p>App Domain: nikhilkaushik12345.github.io</p>
+    <p>Callback URL: https://truecaller.free.beeceptor.com</p>
+    <p>App Key: r7IEZe6541d7a29054afe9d6a1a3d04023636</p>
+    <form id="authForm">
+        <input type="tel" id="phoneInput" placeholder="Enter Phone Number (optional)" />
+        <button type="button" id="authBtn">Authenticate with Truecaller</button>
+        <button type="button" id="fallbackBtn" style="display:none;">Use Manual OTP</button>
+    </form>
+    <div id="result"></div>
+    <div id="oauthCodeSection" style="display:none;">
+        <h3>Authorization Code (Copy for Token Exchange)</h3>
+        <p id="authCode"></p>
+        <p id="verifier"></p>
+    </div>
+    <div id="clientIdWarning" style="color: red; display: none;">Warning: Client ID not set - Update from portal for full OAuth.</div>
+
+    <script>
+        // Embedded Credentials - Client ID must be added from portal
+        const APP_CONFIG = {
+            appName: 'Nikhil Kaushik',
+            appKey: 'r7IEZe6541d7a29054afe9d6a1a3d04023636',  // Your provided app key (partner key)
+            appDomain: 'nikhilkaushik12345.github.io',  // Your provided domain
+            callbackUrl: 'https://truecaller.free.beeceptor.com',  // Updated callback URL
+            bannerCdnUrl: '',  // Optional - add your banner URL if available
+            clientId: 'YOUR_GENERATED_CLIENT_ID_HERE'  // REQUIRED: Replace with Client ID from project credentials (Web platform)
+        };
+
+        if (APP_CONFIG.clientId === 'YOUR_GENERATED_CLIENT_ID_HERE') {
+            document.getElementById('clientIdWarning').style.display = 'block';
+            document.getElementById('clientIdWarning').textContent = 'Add your Client ID from https://developer.truecaller.com (add credential > Web) for OAuth to work. Ensure callback URL is whitelisted.';
+        }
+
+        // PKCE and State Generation Functions
+        function generateCodeVerifier() {
+            let verifier = '';
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+            for (let i = 0; i < 86; i++) {
+                verifier += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return verifier;
+        }
+
+        async function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            return btoa(String.fromCharCode(...new Uint8Array(digest)))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        }
+
+        function generateState() {
+            return btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        }
+
+        // Initialize Truecaller SDK with your credentials
+        let sdkInitialized = false;
+        window.addEventListener('load', async function() {
+            if (window.Truecaller && APP_CONFIG.appKey) {
+                try {
+                    await window.Truecaller.initialize({
+                        clientId: APP_CONFIG.clientId,  // Needs your Client ID
+                        partnerKey: APP_CONFIG.appKey,  // Your app key
+                        redirectURI: APP_CONFIG.callbackUrl,
+                        scopes: ['phone', 'profile', 'openid'],
+                        environment: 'sandbox',  // Switch to 'production' after review
+                        appName: APP_CONFIG.appName,
+                        domain: APP_CONFIG.appDomain,
+                        bannerUrl: APP_CONFIG.bannerCdnUrl
+                    });
+                    sdkInitialized = true;
+                    console.log('Truecaller SDK initialized for', APP_CONFIG.appName);
+                } catch (err) {
+                    console.error('SDK init error:', err);
+                    document.getElementById('result').innerHTML = 'SDK initialization failed (check app key/domain/callback in portal). Falling back to manual OAuth.';
+                    document.getElementById('fallbackBtn').style.display = 'block';
+                }
+            } else {
+                console.error('Truecaller SDK script not loaded or app key missing');
+                document.getElementById('fallbackBtn').style.display = 'block';
+            }
+        });
+
+        // Combined Authentication Function
+        async function initiateAuthentication() {
+            const phoneNumber = document.getElementById('phoneInput').value.trim();
+            if (APP_CONFIG.clientId === 'YOUR_GENERATED_CLIENT_ID_HERE') {
+                document.getElementById('result').innerHTML = 'Client ID required for authentication - generate from portal.';
+                return;
+            }
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Initiating authentication...';
+
+            // Generate PKCE and State for OAuth
+            const codeVerifier = generateCodeVerifier();
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+            const state = generateState();
+
+            // Store securely (sessionStorage for demo)
+            sessionStorage.setItem('code_verifier', codeVerifier);
+            sessionStorage.setItem('oauth_state', state);
+
+            const requestId = 'req_' + Date.now();
+
+            if (sdkInitialized && window.Truecaller) {
+                // SDK flow with your credentials
+                try {
+                    window.Truecaller.request({
+                        requestId: requestId,
+                        phoneNumber: phoneNumber || undefined,
+                        scopes: ['phone', 'profile', 'openid'],
+                        callback: async function(response) {
+                            await handleSdkResponse(response, state, codeVerifier, requestId);
+                        },
+                        error: function(error) {
+                            console.error('SDK error:', error);
+                            resultDiv.innerHTML = `SDK Error: ${error.message || error} (verify app key/domain/callback). Try manual OAuth.`;
+                            document.getElementById('fallbackBtn').style.display = 'block';
+                        }
+                    });
+                } catch (err) {
+                    resultDiv.innerHTML = 'SDK request failed. Try manual OAuth.';
+                    document.getElementById('fallbackBtn').style.display = 'block';
+                }
+            } else {
+                // Fallback to pure OAuth redirect
+                const authUrl = new URL('https://oauth-account-noneu.truecaller.com/v1/authorize');  // Non-EU; use oauth-account.truecaller.com for EU
+                authUrl.searchParams.append('response_type', 'code');
+                authUrl.searchParams.append('client_id', APP_CONFIG.clientId);
+                authUrl.searchParams.append('redirect_uri', APP_CONFIG.callbackUrl);
+                authUrl.searchParams.append('scope', 'phone profile openid');
+                authUrl.searchParams.append('state', state);
+                authUrl.searchParams.append('code_challenge', codeChallenge);
+                authUrl.searchParams.append('code_challenge_method', 'S256');
+
+                if (phoneNumber) {
+                    authUrl.searchParams.append('phone_number', phoneNumber);
+                }
+
+                window.location.href = authUrl.toString();
+            }
+        }
+
+        // Handle SDK or OAuth Callback Response
+        async function handleSdkResponse(response, storedState, codeVerifier, requestId) {
+            const resultDiv = document.getElementById('result');
+            if (response && response.success && response.data) {
+                const userData = response.data;
+                const returnedState = response.state || storedState;
+
+                if (returnedState !== storedState) {
+                    resultDiv.innerHTML = 'State mismatch - invalid response.';
+                    return;
+                }
+
+                let authCode = response.oauthCode || response.code;
+                if (!authCode) {
+                    try {
+                        const oauthResponse = await window.Truecaller.getOAuthCode({ requestId: requestId });
+                        authCode = oauthResponse.code;
+                    } catch (err) {
+                        resultDiv.innerHTML = 'No auth code from SDK. Verified phone: ' + (userData.phone || 'N/A');
+                        return;
+                    }
+                }
+
+                displayAuthCode(authCode, codeVerifier, userData);
+            } else {
+                resultDiv.innerHTML = 'Verification failed. Response: ' + JSON.stringify(response || {});
+                document.getElementById('fallbackBtn').style.display = 'block';
+            }
+        }
+
+        // Handle OAuth Redirect Callback (Beeceptor will log this; implement handling if needed)
+        function handleOAuthCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+            const storedState = sessionStorage.getItem('oauth_state');
+            const codeVerifier = sessionStorage.getItem('code_verifier');
+
+            const resultDiv = document.getElementById('result');
+
+            if (error) {
+                resultDiv.innerHTML = `OAuth Error: ${error}`;
+                return;
+            }
+
+            if (state !== storedState) {
+                resultDiv.innerHTML = 'State mismatch - possible CSRF attack.';
+                return;
+            }
+
+            if (code && codeVerifier) {
+                displayAuthCode(code, codeVerifier, null);
+            } else {
+                resultDiv.innerHTML = 'No authorization code received. Check Beeceptor logs.';
+            }
+
+            // Clear URL params
+            window.history.replaceState({}, document.title, window.location.pathname);
+            sessionStorage.removeItem('oauth_state');
+            sessionStorage.removeItem('code_verifier');
+        }
+
+        // Display Authorization Code
+        function displayAuthCode(code, verifier, userData) {
+            document.getElementById('authCode').textContent = code;
+            document.getElementById('verifier').innerHTML = `Code Verifier: ${verifier}<br>Use: POST https://oauth-account-noneu.truecaller.com/v1/token (grant_type=authorization_code&client_id=${APP_CONFIG.clientId}&code=${code}&code_verifier=${verifier})<br>App Key: ${APP_CONFIG.appKey}<br>Domain: ${APP_CONFIG.appDomain}<br>Callback: ${APP_CONFIG.callbackUrl}`;
+            if (userData) {
+                document.getElementById('verifier').innerHTML += `<br>Verified User: ${userData.name || 'N/A'}, Phone: ${userData.phone || 'N/A'}`;
+            }
+            document.getElementById('oauthCodeSection').style.display = 'block';
+            document.getElementById('result').innerHTML = 'Authentication successful! Copy the code above for manual token exchange. Check Beeceptor for callback details.';
+        }
+
+        // Fallback OTP (Placeholder - implement server-side)
+        function showFallbackOTP() {
+            document.getElementById('result').innerHTML = `
+                <input type="text" id="otpInput" placeholder="Enter OTP sent to phone" />
+                <button onclick="submitOTP()">Verify OTP</button>
+            `;
+        }
+
+        function submitOTP() {
+            const otp = document.getElementById('otpInput').value;
+            console.log('OTP Submitted:', otp);
+            document.getElementById('result').innerHTML = 'OTP verified (simulated). Authentication complete.';
+        }
+
+        // Event Listeners
+        document.getElementById('authBtn').addEventListener('click', initiateAuthentication);
+        document.getElementById('fallbackBtn').addEventListener('click', showFallbackOTP);
+
+        // Auto-handle callback on load (for OAuth or SDK)
+        if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
+            handleOAuthCallback();
+        }
+
+        // SDK message listener
+        if (window.Truecaller) {
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.type === 'truecaller_callback') {
+                    handleSdkResponse(event.data.response, sessionStorage.getItem('oauth_state'), sessionStorage.getItem('code_verifier'), event.data.requestId);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
