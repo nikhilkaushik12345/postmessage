@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Truecaller Authentication Example</title>
+  <script>
+    function initiateTruecallerAuthentication() {
+      const requestNonce = "123456789"; // Unique request ID (change per request)
+      const ttl = 15000; // Timeout in ms for auto-dismissing Truecaller popup
+      
+      const integrationURL =
+        "truecallersdk://truesdk/web_verify?type=btmsheet" +
+        `&requestNonce=${encodeURIComponent(requestNonce)}` +
+        "&partnerKey=r7IEZe6541d7a29054afe9d6a1a3d04023636" +
+        "&partnerName=Nikhil Kaushik" +
+        "&lang=en" +
+        "&privacyUrl=https://nikhilkaushik12345.github.io/privacy.html" +
+        "&termsUrl=https://nikhilkaushik12345.github.io/terms.html" +
+        "&loginPrefix=Verify with" +
+        "&loginSuffix=to continue" +
+        "&ctaPrefix=Continue with" +
+        "&ctaColor=%23000000" +     // Hex colors must be URL encoded (%23 = #)
+        "&ctaTextColor=%23FFFFFF" +
+        "&btnShape=rect" +
+        "&skipOption=Skip" +
+        `&ttl=${ttl}`;
+      
+      window.location = integrationURL;
+
+      const timeoutId = setTimeout(() => {
+        if (document.hasFocus()) {
+          // No Truecaller app detected or user returned early
+          console.log("User returned or Truecaller app not detected");
+          alert("Truecaller app not found or user cancelled. Please try manual login.");
+          // Optionally redirect to fallback/login page here
+        } else {
+          // Truecaller app is open and user is interacting with it
+          console.log("Truecaller app is open");
+          // User’s verification result will be sent to your callback URL
+        }
+      }, ttl + 1000); // Slightly longer than ttl
+
+      // Optionally listen to page visibility for finer control
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          clearTimeout(timeoutId);
+          console.log("User returned from Truecaller app");
+        }
+      });
+    }
+  </script>
+</head>
+<body>
+  <h1>Truecaller Authentication Example</h1>
+  <p>Click the button below to initiate Truecaller authentication:</p>
+  <button onclick="initiateTruecallerAuthentication()">Authenticate with Truecaller</button>
+</body>
+</html>
