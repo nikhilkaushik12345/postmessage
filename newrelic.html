@@ -5,79 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login with Newrelic</title>
     <script>
-        // Function to get the authorization code from the URL after redirect
-        function getAuthorizationCodeFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('code');
-        }
+    async function exchangeCodeForToken(code) {
+        const tokenEndpoint = "https://mcp.newrelic.com/oauth2/token";
 
-        // Function to initiate the login process with Newrelic (OAuth2 authorization request)
-        function loginWithNewrelic() {
-            // Redirecting to Newrelic OAuth2 authorization URL
-            window.location.href = "https://newrelicb2c.b2clogin.com/newrelicb2c.onmicrosoft.com/oauth2/v2.0/authorize?client_id=b716de31-0d8f-44a6-b792-20b29aeaf963&domain_hint=github.com&p=B2C_1A_nr_signin&redirect_uri=https%3A%2F%2Flogin.newrelic.com%2Fidp%2Fazureb2c%2Fredirect&response_mode=form_post&response_type=code&scope=openid+offline_access&state=eyJ0cmFuc2FjdGlvbl9pZCI6IllxN08xNkE1WWFKSUxzdXZMZEtBSzl3dUxIajhwbSIsInJldHVybl90byI6Imh0dHBzOi8vbmlraGlsa2F1c2hpa29wLmdpdGh1Yi5pby9wb3N0bWVzc2FnZS9uZXdyZWxpYyIsImNsaWVudF9pZCI6InBVV0dnbmpzUTBieWRxQ2JhdlRQcHc9PSIsInJlc3BvbnNlX3R5cGUiOiJjb2RlIiwiY29kZV9jaGFsbGVuZ2UiOiJJeVhwejBPeHpMejU4eHVMTU83UTZlOVZjV3Vic211N1l1UDBjbkRDYmEwIiwibHNjX3N0YXRlIjoiIn0%3d";
-        }
+        // Prepare the data for the POST request
+        const body = new URLSearchParams({
+            grant_type: "authorization_code",  // Type of grant (authorization code)
+            code: code,                        // Authorization code received from the URL
+            redirect_uri: "https://google.com/callback",  // The redirect URI must match one used in the OAuth request
+            client_id: "pUWGgnjsQ0bydqCbavTPpw==",  // Your client ID
+            code_verifier: "7x8lng1zVbNlSVo29oyTVWk8oeauEvbYsRjwKHNZEdE"  // Code verifier (for PKCE)
+        });
 
-        // Function to exchange the authorization code for an access token
-        async function exchangeCodeForToken(code) {
-            const tokenEndpoint = "https://mcp.newrelic.com/oauth2/token"; // Token endpoint URL
+        // Display a log to ensure the function is being called
+        console.log("Attempting to exchange code for token...");
 
-            // Prepare the data to send in the POST request (OAuth2 parameters)
-            const body = new URLSearchParams({
-                grant_type: "authorization_code",  // Grant type for exchanging authorization code
-                code: code,                        // Authorization code received from the URL
-                redirect_uri: "https://google.com/callback",  // The redirect URI must match one used in the OAuth request
-                client_id: "pUWGgnjsQ0bydqCbavTPpw==",  // Client ID from your application
-                code_verifier: "7x8lng1zVbNlSVo29oyTVWk8oeauEvbYsRjwKHNZEdE"  // Code verifier for PKCE flow
+        try {
+            // Send POST request to the token endpoint
+            const response = await fetch(tokenEndpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json"
+                },
+                body: body.toString()
             });
 
-            try {
-                // Make the POST request to the token endpoint
-                const response = await fetch(tokenEndpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "Accept": "application/json"
-                    },
-                    body: body.toString()
-                });
-
-                // Check if the response is successful
-                if (response.ok) {
-                    const data = await response.json();
-                    return data.access_token;  // Return the access token
-                } else {
-                    // If the response is not successful, log the error
-                    console.error("Failed to fetch token: ", await response.text());
-                    return null;
-                }
-            } catch (error) {
-                // Log any errors that happen during the request
-                console.error("Error during token exchange: ", error);
-                return null;
-            }
-        }
-
-        // This function will run when the page loads
-        window.onload = async function() {
-            const authorizationCode = getAuthorizationCodeFromUrl();  // Get the authorization code from the URL
-
-            if (authorizationCode) {
-                // If the authorization code exists, attempt to exchange it for an access token
-                const accessToken = await exchangeCodeForToken(authorizationCode);
-
-                // If we get an access token, display it on the page
-                if (accessToken) {
-                    document.getElementById("authorization-code").textContent = "Access Token: " + accessToken;
-                } else {
-                    // If no access token, display an error message
-                    document.getElementById("authorization-code").textContent = "Failed to retrieve access token.";
-                }
+            // Check if the request was successful
+            if (response.ok) {
+                const data = await response.json();  // Parse the JSON response
+                console.log("Token exchange successful:", data);  // Log the successful response
+                return data.access_token;  // Return the access token
             } else {
-                // If no authorization code is in the URL, show a message to the user
-                document.getElementById("authorization-code").textContent = "No authorization code found in the URL.";
+                // If the response is not successful, log the error and display the response body
+                const errorResponse = await response.text();
+                console.error("Failed to fetch token. Response:", errorResponse);
+                return null;  // Return null if the request fails
             }
-        };
-    </script>
+        } catch (error) {
+            // If an error occurs during the fetch request, log the error
+            console.error("Error during token exchange:", error);
+            return null;  // Return null in case of error
+        }
+    }
+</script>
 </head>
 <body>
     <h1>Login with Newrelic</h1>
