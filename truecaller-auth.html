@@ -11,7 +11,7 @@
     <p>App Name: Nikhil Kaushik</p>
     <p>App Domain: nikhilkaushik12345.github.io</p>
     <p>Callback URL: https://truecaller.free.beeceptor.com</p>
-    <p>App Key: r7IEZe6541d7a29054afe9d6a1a3d04023636</p>
+    <p>App Key / Client ID: r7IEZe6541d7a29054afe9d6a1a3d04023636</p>
     <form id="authForm">
         <input type="tel" id="phoneInput" placeholder="Enter Phone Number (optional)" />
         <button type="button" id="authBtn">Authenticate with Truecaller</button>
@@ -23,23 +23,17 @@
         <p id="authCode"></p>
         <p id="verifier"></p>
     </div>
-    <div id="clientIdWarning" style="color: red; display: none;">Warning: Client ID not set - Update from portal for full OAuth.</div>
 
     <script>
-        // Embedded Credentials - Client ID must be added from portal
+        // Embedded Credentials - Using app key as clientId per your confirmation
         const APP_CONFIG = {
             appName: 'Nikhil Kaushik',
-            appKey: 'r7IEZe6541d7a29054afe9d6a1a3d04023636',  // Your provided app key (partner key)
-            appDomain: 'nikhilkaushik12345.github.io',  // Your provided domain
-            callbackUrl: 'https://truecaller.free.beeceptor.com',  // Updated callback URL
-            bannerCdnUrl: '',  // Optional - add your banner URL if available
-            clientId: 'YOUR_GENERATED_CLIENT_ID_HERE'  // REQUIRED: Replace with Client ID from project credentials (Web platform)
+            appKey: 'r7IEZe6541d7a29054afe9d6a1a3d04023636',  // Your app key (partner key for SDK)
+            clientId: 'r7IEZe6541d7a29054afe9d6a1a3d04023636',  // Using as Client ID for OAuth
+            appDomain: 'nikhilkaushik12345.github.io',  // Your domain
+            callbackUrl: 'https://truecaller.free.beeceptor.com',  // Updated callback
+            bannerCdnUrl: ''  // Optional
         };
-
-        if (APP_CONFIG.clientId === 'YOUR_GENERATED_CLIENT_ID_HERE') {
-            document.getElementById('clientIdWarning').style.display = 'block';
-            document.getElementById('clientIdWarning').textContent = 'Add your Client ID from https://developer.truecaller.com (add credential > Web) for OAuth to work. Ensure callback URL is whitelisted.';
-        }
 
         // PKCE and State Generation Functions
         function generateCodeVerifier() {
@@ -64,14 +58,14 @@
                 .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
         }
 
-        // Initialize Truecaller SDK with your credentials
+        // Initialize Truecaller SDK
         let sdkInitialized = false;
         window.addEventListener('load', async function() {
             if (window.Truecaller && APP_CONFIG.appKey) {
                 try {
                     await window.Truecaller.initialize({
-                        clientId: APP_CONFIG.clientId,  // Needs your Client ID
-                        partnerKey: APP_CONFIG.appKey,  // Your app key
+                        clientId: APP_CONFIG.clientId,  // App key as clientId
+                        partnerKey: APP_CONFIG.appKey,  // App key for SDK
                         redirectURI: APP_CONFIG.callbackUrl,
                         scopes: ['phone', 'profile', 'openid'],
                         environment: 'sandbox',  // Switch to 'production' after review
@@ -83,7 +77,7 @@
                     console.log('Truecaller SDK initialized for', APP_CONFIG.appName);
                 } catch (err) {
                     console.error('SDK init error:', err);
-                    document.getElementById('result').innerHTML = 'SDK initialization failed (check app key/domain/callback in portal). Falling back to manual OAuth.';
+                    document.getElementById('result').innerHTML = 'SDK initialization failed (verify app key as clientId in portal). Falling back to manual OAuth.';
                     document.getElementById('fallbackBtn').style.display = 'block';
                 }
             } else {
@@ -95,10 +89,6 @@
         // Combined Authentication Function
         async function initiateAuthentication() {
             const phoneNumber = document.getElementById('phoneInput').value.trim();
-            if (APP_CONFIG.clientId === 'YOUR_GENERATED_CLIENT_ID_HERE') {
-                document.getElementById('result').innerHTML = 'Client ID required for authentication - generate from portal.';
-                return;
-            }
 
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = 'Initiating authentication...';
@@ -115,7 +105,7 @@
             const requestId = 'req_' + Date.now();
 
             if (sdkInitialized && window.Truecaller) {
-                // SDK flow with your credentials
+                // SDK flow
                 try {
                     window.Truecaller.request({
                         requestId: requestId,
@@ -126,7 +116,7 @@
                         },
                         error: function(error) {
                             console.error('SDK error:', error);
-                            resultDiv.innerHTML = `SDK Error: ${error.message || error} (verify app key/domain/callback). Try manual OAuth.`;
+                            resultDiv.innerHTML = `SDK Error: ${error.message || error} (verify app key/clientId). Try manual OAuth.`;
                             document.getElementById('fallbackBtn').style.display = 'block';
                         }
                     });
@@ -136,7 +126,7 @@
                 }
             } else {
                 // Fallback to pure OAuth redirect
-                const authUrl = new URL('https://oauth-account-noneu.truecaller.com/v1/authorize');  // Non-EU; use oauth-account.truecaller.com for EU
+                const authUrl = new URL('https://oauth-account-noneu.truecaller.com/v1/authorize');  // Non-EU
                 authUrl.searchParams.append('response_type', 'code');
                 authUrl.searchParams.append('client_id', APP_CONFIG.clientId);
                 authUrl.searchParams.append('redirect_uri', APP_CONFIG.callbackUrl);
@@ -183,7 +173,7 @@
             }
         }
 
-        // Handle OAuth Redirect Callback (Beeceptor will log this; implement handling if needed)
+        // Handle OAuth Redirect Callback
         function handleOAuthCallback() {
             const urlParams = new URLSearchParams(window.location.search);
             const code = urlParams.get('code');
@@ -219,15 +209,15 @@
         // Display Authorization Code
         function displayAuthCode(code, verifier, userData) {
             document.getElementById('authCode').textContent = code;
-            document.getElementById('verifier').innerHTML = `Code Verifier: ${verifier}<br>Use: POST https://oauth-account-noneu.truecaller.com/v1/token (grant_type=authorization_code&client_id=${APP_CONFIG.clientId}&code=${code}&code_verifier=${verifier})<br>App Key: ${APP_CONFIG.appKey}<br>Domain: ${APP_CONFIG.appDomain}<br>Callback: ${APP_CONFIG.callbackUrl}`;
+            document.getElementById('verifier').innerHTML = `Code Verifier: ${verifier}<br>Use: POST https://oauth-account-noneu.truecaller.com/v1/token (grant_type=authorization_code&client_id=${APP_CONFIG.clientId}&code=${code}&code_verifier=${verifier})<br>App Key / Client ID: ${APP_CONFIG.appKey}<br>Domain: ${APP_CONFIG.appDomain}<br>Callback: ${APP_CONFIG.callbackUrl}`;
             if (userData) {
                 document.getElementById('verifier').innerHTML += `<br>Verified User: ${userData.name || 'N/A'}, Phone: ${userData.phone || 'N/A'}`;
             }
             document.getElementById('oauthCodeSection').style.display = 'block';
-            document.getElementById('result').innerHTML = 'Authentication successful! Copy the code above for manual token exchange. Check Beeceptor for callback details.';
+            document.getElementById('result').innerHTML = 'Authentication successful! Copy the code above for manual token exchange. Check Beeceptor for callback.';
         }
 
-        // Fallback OTP (Placeholder - implement server-side)
+        // Fallback OTP (Placeholder)
         function showFallbackOTP() {
             document.getElementById('result').innerHTML = `
                 <input type="text" id="otpInput" placeholder="Enter OTP sent to phone" />
@@ -245,7 +235,7 @@
         document.getElementById('authBtn').addEventListener('click', initiateAuthentication);
         document.getElementById('fallbackBtn').addEventListener('click', showFallbackOTP);
 
-        // Auto-handle callback on load (for OAuth or SDK)
+        // Auto-handle callback on load
         if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
             handleOAuthCallback();
         }
